@@ -154,7 +154,9 @@ def find_elements_with_namespace_handling(
     # Also try to match local name regardless of namespace
     for elem in root.iter():
         # Extract local name (after last '}' or full tag if no namespace)
-        local_name = elem.tag.split("}")[-1] if "}" in elem.tag else elem.tag
+        # Convert tag to string to handle QName objects and cython types
+        tag_str = str(elem.tag) if hasattr(elem, 'tag') else elem.tag
+        local_name = tag_str.split("}")[-1] if "}" in tag_str else tag_str
         if local_name == tag_name and elem not in results:
             results.append(elem)
 

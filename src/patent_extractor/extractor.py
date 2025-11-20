@@ -88,10 +88,21 @@ def extract_doc_number_from_document_id(document_id_elem: LXMLElement) -> Tuple[
         load_source = get_normalized_attribute(document_id_elem, "load-source")
         if not load_source:
             logger.warning("document-id element missing load-source attribute")
-            load_source = "unknown"
+            return None, DEFAULT_PRIORITY, ""
 
-        # Find doc-number element
+        # Find doc-number element (handle namespaces)
+        doc_number_elem = None
+        # Try direct find first
         doc_number_elem = document_id_elem.find("doc-number")
+        if doc_number_elem is None:
+            # Try namespace-agnostic search by local name
+            for child in document_id_elem.iter():
+                tag_str = str(child.tag) if hasattr(child, 'tag') else child.tag
+                local_name = tag_str.split("}")[-1] if "}" in tag_str else tag_str
+                if local_name == "doc-number":
+                    doc_number_elem = child
+                    break
+
         if doc_number_elem is None:
             logger.warning("document-id element missing doc-number child element")
             return None, DEFAULT_PRIORITY, load_source
