@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <application-reference ucid="US-XXXXXXXX-A" is-representative="NO" us-art-unit="9999" us-series-code="XX">
+    <document-id mxw-id="ABCD99999999" load-source="docdb" format="epo">
+      <country>US</country>
+      <doc-number>999000888</doc-number>
+      <kind>A</kind>
+      <date>20051213</date>
+      <lang>EN</lang>
+    </document-id>
+    <document-id mxw-id="ABCD88888888" load-source="patent-office" format="original">
+      <country>US</country>
+      <doc-number>66667777</doc-number>
+      <lang>EN</lang>
+    </document-id>
+  </application-reference>
+</root>
+

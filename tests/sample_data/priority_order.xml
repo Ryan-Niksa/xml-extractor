@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <application-reference ucid="US-XXXXXXXX-A">
+    <document-id mxw-id="ABCD11111111" load-source="patent-office" format="original">
+      <country>US</country>
+      <doc-number>111111111</doc-number>
+    </document-id>
+    <document-id mxw-id="ABCD22222222" load-source="epo" format="epo">
+      <country>US</country>
+      <doc-number>222222222</doc-number>
+    </document-id>
+    <document-id mxw-id="ABCD33333333" load-source="docdb" format="epo">
+      <country>US</country>
+      <doc-number>333333333</doc-number>
+    </document-id>
+    <document-id mxw-id="ABCD44444444" load-source="patent-office" format="original">
+      <country>US</country>
+      <doc-number>444444444</doc-number>
+    </document-id>
+  </application-reference>
+</root>
+

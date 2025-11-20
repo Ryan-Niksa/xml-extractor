@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <application-reference ucid="US-XXXXXXXX-A">
+    <document-id MXW-ID="ABCD99999999" LOAD-SOURCE="DOCDB" FORMAT="epo">
+      <country>US</country>
+      <doc-number>999000888</doc-number>
+    </document-id>
+    <document-id mxw_id="ABCD88888888" load_source="PATENT-OFFICE" format="original">
+      <country>US</country>
+      <doc-number>66667777</doc-number>
+    </document-id>
+  </application-reference>
+</root>
+
