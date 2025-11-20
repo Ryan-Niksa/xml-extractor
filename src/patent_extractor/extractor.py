@@ -1,5 +1,3 @@
-"""Extract doc-numbers from patent XML, prioritizing epo over patent-office."""
-
 import logging
 from pathlib import Path
 from typing import List, Tuple
@@ -29,7 +27,6 @@ DEFAULT_PRIORITY = 99  # unknown formats get lowest priority
 
 
 def normalize_load_source(load_source: str) -> str:
-    """Normalize load-source values - handles docdb->epo, various patent-office formats."""
     normalized = load_source.lower().strip()
 
     # Map docdb to epo
@@ -44,18 +41,11 @@ def normalize_load_source(load_source: str) -> str:
 
 
 def get_priority(load_source: str) -> int:
-    """Returns priority value - lower means higher priority."""
     normalized = normalize_load_source(load_source)
     return PRIORITY_MAP.get(normalized, DEFAULT_PRIORITY)
 
 
 def extract_doc_number_from_document_id(document_id_elem: LXMLElement) -> Tuple[str, int, str]:
-    """
-    Extract doc-number from a document-id element.
-    
-    Returns (doc-number, priority, load-source) or (None, priority, source) if something's missing.
-    Skips elements without load-source entirely.
-    """
     try:
         # Need load-source to determine priority - skip if missing
         load_source = get_normalized_attribute(document_id_elem, "load-source")
@@ -93,12 +83,6 @@ def extract_doc_number_from_document_id(document_id_elem: LXMLElement) -> Tuple[
 
 
 def extract_doc_numbers(file_path: Path) -> List[str]:
-    """
-    Main extraction function - pulls out doc-numbers from XML file.
-    
-    Returns them in priority order: epo/docdb first, then patent-office.
-    Handles messy XML, missing attributes, namespaces, etc.
-    """
     logger.info(f"Extracting doc-numbers from: {file_path}")
 
     try:

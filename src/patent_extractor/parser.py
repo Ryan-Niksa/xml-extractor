@@ -1,5 +1,3 @@
-"""XML parsing stuff - handles namespaces, normalizes attributes, deals with broken XML."""
-
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -16,18 +14,15 @@ ENCODINGS_TO_TRY = ["utf-8", "utf-16", "latin-1", "iso-8859-1", "cp1252"]
 
 
 def normalize_attribute_name(name: str) -> str:
-    """Normalize attribute names - lowercase, handle hyphens/underscores."""
     # Both hyphens and underscores become underscores for comparison
     return name.lower().replace("-", "_").replace("_", "_")
 
 
 def normalize_attribute_value(value: str) -> str:
-    """Strip whitespace and lowercase attribute values."""
     return value.strip().lower() if value else ""
 
 
 def get_normalized_attribute(element: LXMLElement, attr_name: str) -> Optional[str]:
-    """Get attribute value with normalization - handles LOAD-SOURCE vs load_source etc."""
     if not element.attrib:
         return None
 
@@ -41,11 +36,6 @@ def get_normalized_attribute(element: LXMLElement, attr_name: str) -> Optional[s
 
 
 def parse_xml_file(file_path: Path) -> LXMLElement:
-    """
-    Parse XML file with error recovery. Tries multiple encodings if needed.
-    
-    Uses lxml's recover mode so it can handle slightly broken XML files.
-    """
     if not file_path.exists():
         raise FileError(f"File not found: {file_path}")
 
@@ -86,7 +76,6 @@ def parse_xml_file(file_path: Path) -> LXMLElement:
 def find_elements_with_namespace_handling(
     root: LXMLElement, tag_name: str, namespace_map: Optional[Dict[str, str]] = None
 ) -> List[LXMLElement]:
-    """Find elements by tag name - works with or without namespaces."""
     if namespace_map:
         try:
             return root.findall(f".//{{{namespace_map.get('ns', '')}}}{tag_name}", namespaces=namespace_map)
@@ -108,7 +97,6 @@ def find_elements_with_namespace_handling(
 
 
 def extract_text_content(element: LXMLElement) -> str:
-    """Extract text content from element, stripped of whitespace."""
     if element is None:
         return ""
     return (element.text or "").strip()

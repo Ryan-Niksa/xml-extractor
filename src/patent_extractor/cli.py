@@ -1,5 +1,3 @@
-"""CLI for extracting doc-numbers from patent XML files."""
-
 import argparse
 import json
 import logging
@@ -14,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 def setup_logging(verbose: bool = False) -> None:
-    """Setup logging - DEBUG if verbose, INFO otherwise."""
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=level,
@@ -24,7 +21,6 @@ def setup_logging(verbose: bool = False) -> None:
 
 
 def output_results(doc_numbers: List[str], output_format: str = "lines") -> None:
-    """Output results as lines or JSON."""
     if output_format == "json":
         print(json.dumps(doc_numbers, indent=2))
     else:
@@ -33,9 +29,8 @@ def output_results(doc_numbers: List[str], output_format: str = "lines") -> None
 
 
 def main() -> int:
-    """Main entry point for CLI."""
     parser = argparse.ArgumentParser(
-        description="Extract doc-number values from patent XML documents with priority ordering"
+        description="Extract doc-numbers from patent XML files (epo priority > patent-office)"
     )
     parser.add_argument(
         "xml_file",

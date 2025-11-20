@@ -1,10 +1,3 @@
-"""
-Patent XML doc-number extraction package.
-
-This package provides functionality to extract doc-number values from patent
-XML documents, prioritizing epo format over patent-office format.
-"""
-
 from patent_extractor.extractor import extract_doc_numbers
 from patent_extractor.errors import (
     ExtractionError,
