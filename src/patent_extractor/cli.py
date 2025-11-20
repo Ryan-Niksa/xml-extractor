@@ -1,6 +1,4 @@
-"""
-Command-line interface for patent XML doc-number extraction.
-"""
+"""CLI for extracting doc-numbers from patent XML files."""
 
 import argparse
 import json
@@ -16,12 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def setup_logging(verbose: bool = False) -> None:
-    """
-    Configure logging based on verbosity level.
-
-    Args:
-        verbose: If True, use DEBUG level logging, otherwise use INFO
-    """
+    """Setup logging - DEBUG if verbose, INFO otherwise."""
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=level,
@@ -31,28 +24,16 @@ def setup_logging(verbose: bool = False) -> None:
 
 
 def output_results(doc_numbers: List[str], output_format: str = "lines") -> None:
-    """
-    Output doc-number results in the specified format.
-
-    Args:
-        doc_numbers: List of doc-number values
-        output_format: Output format ("lines" or "json")
-    """
+    """Output results as lines or JSON."""
     if output_format == "json":
         print(json.dumps(doc_numbers, indent=2))
     else:
-        # Default: one per line
         for doc_number in doc_numbers:
             print(doc_number)
 
 
 def main() -> int:
-    """
-    Main CLI entry point.
-
-    Returns:
-        Exit code (0 for success, non-zero for errors)
-    """
+    """Main entry point for CLI."""
     parser = argparse.ArgumentParser(
         description="Extract doc-number values from patent XML documents with priority ordering"
     )
@@ -76,10 +57,8 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    # Setup logging
     setup_logging(verbose=args.verbose)
 
-    # Validate file path
     xml_file = args.xml_file
     if not xml_file.exists():
         logger.error(f"File not found: {xml_file}")
@@ -91,7 +70,6 @@ def main() -> int:
         print(f"Error: Path is not a file: {xml_file}", file=sys.stderr)
         return 1
 
-    # Extract doc-numbers
     try:
         doc_numbers = extract_doc_numbers(xml_file)
     except FileError as e:
@@ -111,7 +89,6 @@ def main() -> int:
         print(f"Unexpected error: {e}", file=sys.stderr)
         return 1
 
-    # Output results
     try:
         output_results(doc_numbers, output_format=args.output_format)
         return 0

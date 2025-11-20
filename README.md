@@ -1,256 +1,135 @@
-# Patent XML Doc-Number Extraction
+# Patent XML Doc-Number Extractor
 
-A production-ready Python program that extracts `doc-number` values from patent XML documents stored in Google Cloud Storage (GCS) format, with priority ordering: **epo format first, then patent-office**.
+Simple tool to extract `doc-number` values from patent XML files. Prioritizes epo format over patent-office.
 
-## Features
+## Quick Start
 
-- **Priority Ordering**: Extracts doc-numbers in priority order (epo format first, then patent-office)
-- **Robust XML Parsing**: Handles malformed XML with error recovery
-- **Real-World XML Variations**: Supports namespace variations, case differences, hyphen/underscore variations
-- **Comprehensive Error Handling**: Uniform error handling with graceful degradation
-- **Production Ready**: Includes guardrails, logging, and edge case handling
-
-## Installation
-
-This project uses [`uv`](https://github.com/astral-sh/uv) for dependency management and virtual environment handling.
-
-### Prerequisites
-
-- Python 3.8 or higher
-- `uv` package manager ([installation instructions](https://github.com/astral-sh/uv#installation))
-
-### Setup
-
-1. **Clone the repository** (or download the code):
-   ```bash
-   git clone <repository-url>
-   cd XML_Extraction_Challenge
-   ```
-
-2. **Install dependencies using uv**:
-   ```bash
-   uv venv
-   uv pip install -e .
-   ```
-
-   Or if you want to install with development dependencies:
-   ```bash
-   uv pip install -e ".[dev]"
-   ```
-
-## Usage
-
-### Command-Line Interface
-
-The program accepts an XML file path and extracts doc-number values:
+Install with uv:
 
 ```bash
-patent-extractor <xml_file>
+uv venv
+uv pip install -e .
 ```
 
-**Example:**
+Or with regular pip in the venv:
+
+```bash
+pip install -e .
+```
+
+Run it:
+
 ```bash
 patent-extractor sample_input.xml
 ```
 
-**Output (lines format, default):**
+Output:
 ```
 999000888
 66667777
 ```
 
-**Output (JSON format):**
+The epo/docdb ones come first, then patent-office.
+
+## Usage
+
+Basic usage - just pass an XML file:
+
+```bash
+patent-extractor sample_input.xml
+```
+
+JSON output:
+
 ```bash
 patent-extractor sample_input.xml --output-format json
 ```
 
-**Output:**
-```json
-[
-  "999000888",
-  "66667777"
-]
-```
+Verbose mode (shows what's happening):
 
-**Verbose logging:**
 ```bash
 patent-extractor sample_input.xml --verbose
 ```
 
-### Command-Line Options
-
-- `xml_file`: Path to the XML file to process (required)
-- `--output-format {lines,json}`: Output format (default: `lines`)
-  - `lines`: One doc-number per line
-  - `json`: JSON array of doc-numbers
-- `-v, --verbose`: Enable verbose logging for debugging
-
-### Programmatic Usage
-
-You can also use the extraction functionality programmatically:
+You can also use it in Python:
 
 ```python
 from pathlib import Path
 from patent_extractor import extract_doc_numbers
 
 doc_numbers = extract_doc_numbers(Path("sample_input.xml"))
-print(doc_numbers)  # ['999000888', '66667777']
 ```
 
-## How It Works
+## What It Does
 
-1. **XML Parsing**: The program uses `lxml` with error recovery to parse XML files, handling malformed XML gracefully
-2. **Normalization**: Attribute names are normalized to handle case variations (e.g., `LOAD-SOURCE` vs `load-source`) and hyphen/underscore differences (e.g., `load-source` vs `load_source`)
-3. **Extraction**: Finds all `document-id` elements within `application-reference` elements
-4. **Priority Sorting**: Sorts doc-numbers by format priority:
-   - Priority 0: `epo` format (including `docdb` load-source)
-   - Priority 1: `patent-office` format
-   - Priority 99: Unknown formats (lowest priority)
-5. **Validation**: Skips invalid or empty doc-numbers with warnings
+1. Parses the XML (handles broken XML with error recovery)
+2. Finds all `document-id` elements inside `application-reference` blocks
+3. Extracts the `doc-number` from each one
+4. Sorts by priority: epo/docdb first, then patent-office
+5. Returns the list in priority order
+
+## Handling Real-World XML
+
+The code handles a bunch of variations you see in actual patent data:
+
+- **Namespaces** - Works with `ns:document-id` or just `document-id`
+- **Case variations** - `LOAD-SOURCE`, `load-source`, `Load_Source` all work
+- **Hyphen vs underscore** - Normalizes `load-source` and `load_source` the same way
+- **Missing attributes** - Skips elements without `load-source` (logs a warning)
+- **Broken XML** - Uses lxml's recover mode to extract what it can
+- **Multiple encodings** - Tries utf-8, utf-16, latin-1, etc.
 
 ## Assumptions
 
-The following assumptions are made about the XML document structure:
+- `document-id` elements are inside `application-reference` elements
+- `load-source` attribute tells us the format (docdb = epo for priority purposes)
+- `doc-number` is a child element with text content
+- Multiple `document-id` elements per `application-reference` are fine
+- XML might be messy - that's ok, we try to handle it
 
-1. **Structure**: `document-id` elements are nested under `application-reference` elements
-2. **Load Source**: The `load-source` attribute identifies the format:
-   - `docdb` is treated as `epo` format (same priority)
-   - `patent-office` (or variations) identifies patent-office format
-3. **Doc-Number Element**: `doc-number` is a child element of `document-id` with text content
-4. **Multiple Elements**: Multiple `document-id` elements per `application-reference` are allowed and expected
-5. **Attributes**: Attributes may have case variations or hyphen/underscore differences (handled via normalization)
-6. **XML Quality**: XML may be malformed or have missing attributes (handled with error recovery and warnings)
-7. **Namespaces**: XML may or may not use namespaces; both are supported
-8. **Encoding**: XML files may use various encodings (utf-8, utf-16, latin-1, etc.); the program tries multiple encodings
+## Priority Ordering
 
-## Real-World XML Variations Handled
+Priority works like this:
+- **Priority 0**: epo format (including docdb)
+- **Priority 1**: patent-office format
+- **Priority 99**: Unknown formats (skipped by default since they need load-source)
 
-The program handles various real-world XML variations:
-
-- **Namespace Variations**: Supports XML with or without namespaces, with different namespace prefixes
-- **Case Variations**: Handles uppercase, lowercase, or mixed-case attribute/element names
-- **Hyphen vs Underscore**: Normalizes `load-source`, `load_source`, `LOAD-SOURCE`, etc. to the same value
-- **Missing Attributes**: Gracefully handles missing `load-source` attributes (logs warning, continues)
-- **Empty Values**: Skips empty or whitespace-only doc-number values
-- **Malformed XML**: Uses error recovery to extract data from partially malformed XML
-- **Multiple Blocks**: Handles multiple `application-reference` blocks in a single file
-- **Encoding Issues**: Tries multiple encodings if the default fails
-
-## Error Handling
-
-The program uses a uniform error handling approach:
-
-### Error Categories
-
-1. **FileError**: Raised when the file cannot be read or found
-2. **XMLParseError**: Raised when XML parsing fails critically
-3. **ExtractionError**: Raised when doc-number extraction fails critically
-
-### Error Recovery
-
-- **Malformed XML**: Uses lxml's error recovery mode to extract partial data
-- **Missing Elements**: Logs warnings and continues processing other elements
-- **Invalid Values**: Skips invalid doc-numbers with warnings, returns partial results
-- **Encoding Issues**: Tries multiple encodings automatically
-
-### Exit Codes
-
-- `0`: Success
-- `1`: Error (file error, parsing error, or extraction error)
+Lower number = higher priority. All epo ones come first, then patent-office.
 
 ## Testing
 
-The project includes a comprehensive test suite covering:
-
-- Standard XML format
-- Multiple application-reference blocks
-- Case variations in attributes
-- Missing load-source attributes
-- Empty doc-number values
-- Missing doc-number elements
-- Namespaced XML
-- Malformed XML (error recovery)
-- Priority ordering verification
-- Edge cases (no application-reference, file not found, etc.)
-
-### Running Tests
+Run the tests:
 
 ```bash
-# Using uv
-uv run pytest
-
-# Or with coverage
-uv run pytest --cov=patent_extractor --cov-report=html
+pytest tests/ -v
 ```
 
-## Example XML Input
-
-The program expects XML in the following format:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<root>
-  <application-reference ucid="US-XXXXXXXX-A" is-representative="NO" us-art-unit="9999" us-series-code="XX">
-    <document-id mxw-id="ABCD99999999" load-source="docdb" format="epo">
-      <country>US</country>
-      <doc-number>999000888</doc-number>
-      <kind>A</kind>
-      <date>20051213</date>
-      <lang>EN</lang>
-    </document-id>
-    <document-id mxw-id="ABCD88888888" load-source="patent-office" format="original">
-      <country>US</country>
-      <doc-number>66667777</doc-number>
-      <lang>EN</lang>
-    </document-id>
-  </application-reference>
-</root>
-```
-
-### Expected Output
-
-```
-999000888
-66667777
-```
-
-The first doc-number (`999000888`) has priority because its `load-source` is `docdb` (treated as `epo`), which has higher priority than `patent-office`.
+There are 14 tests covering the edge cases - namespaces, missing attributes, broken XML, etc.
 
 ## Project Structure
 
 ```
-.
-├── src/
-│   └── patent_extractor/
-│       ├── __init__.py          # Package initialization
-│       ├── extractor.py          # Core extraction logic
-│       ├── parser.py             # XML parsing utilities
-│       ├── errors.py             # Custom exception classes
-│       └── cli.py                # Command-line interface
-├── tests/
-│   ├── __init__.py
-│   ├── test_extractor.py         # Test suite
-│   └── sample_data/              # Test XML files
-├── sample_input.xml              # Example input file
-├── pyproject.toml                # Project configuration (uv)
-└── README.md                     # This file
+src/patent_extractor/
+  ├── extractor.py   # Main extraction logic
+  ├── parser.py      # XML parsing utilities
+  ├── cli.py         # Command-line interface
+  └── errors.py      # Custom exceptions
+
+tests/
+  ├── test_extractor.py
+  └── sample_data/   # Test XML files
 ```
 
 ## Dependencies
 
-- **lxml**: Robust XML parsing with error recovery
-- **typing**: Type hints for better code quality
+- `lxml` - XML parsing with error recovery
 
-### Development Dependencies
+Dev dependencies:
+- `pytest` - Testing
+- `pytest-cov` - Coverage reports
 
-- **pytest**: Testing framework
-- **pytest-cov**: Test coverage reporting
+## Notes
 
-## License
+This was built for a data engineering challenge. The XML from GCS can be messy, so the code tries to be resilient. It logs warnings when it skips elements but keeps going - better to get partial results than fail completely.
 
-This project is provided as-is for the Cypress Data Engineer Challenge.
-
-## Author
-
-Created for the Cyprus Data Engineer Challenge - XML Attribute Extraction task.
-
+If you find edge cases that break it, feel free to open an issue or submit a PR.

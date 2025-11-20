@@ -1,9 +1,4 @@
-"""
-XML parsing utilities with normalization and error recovery.
-
-Handles namespace variations, attribute name normalization (case/hyphen variations),
-and provides robust error recovery for malformed XML.
-"""
+"""XML parsing stuff - handles namespaces, normalizes attributes, deals with broken XML."""
 
 import logging
 from pathlib import Path
@@ -21,50 +16,23 @@ ENCODINGS_TO_TRY = ["utf-8", "utf-16", "latin-1", "iso-8859-1", "cp1252"]
 
 
 def normalize_attribute_name(name: str) -> str:
-    """
-    Normalize attribute names to handle case and hyphen/underscore variations.
-
-    Args:
-        name: The attribute name to normalize
-
-    Returns:
-        Normalized attribute name in lowercase with hyphens converted to underscores
-    """
+    """Normalize attribute names - lowercase, handle hyphens/underscores."""
+    # Both hyphens and underscores become underscores for comparison
     return name.lower().replace("-", "_").replace("_", "_")
 
 
 def normalize_attribute_value(value: str) -> str:
-    """
-    Normalize attribute values by stripping whitespace and converting to lowercase.
-
-    Args:
-        value: The attribute value to normalize
-
-    Returns:
-        Normalized attribute value
-    """
+    """Strip whitespace and lowercase attribute values."""
     return value.strip().lower() if value else ""
 
 
 def get_normalized_attribute(element: LXMLElement, attr_name: str) -> Optional[str]:
-    """
-    Get an attribute value from an element with normalization.
-
-    Handles case variations and hyphen/underscore differences in attribute names.
-
-    Args:
-        element: The XML element
-        attr_name: The attribute name (will be normalized for lookup)
-
-    Returns:
-        The normalized attribute value, or None if not found
-    """
+    """Get attribute value with normalization - handles LOAD-SOURCE vs load_source etc."""
     if not element.attrib:
         return None
 
     normalized_attr = normalize_attribute_name(attr_name)
 
-    # Try exact match first (case-insensitive)
     for key, value in element.attrib.items():
         if normalize_attribute_name(key) == normalized_attr:
             return normalize_attribute_value(value)
@@ -74,17 +42,9 @@ def get_normalized_attribute(element: LXMLElement, attr_name: str) -> Optional[s
 
 def parse_xml_file(file_path: Path) -> LXMLElement:
     """
-    Parse an XML file with error recovery and encoding detection.
-
-    Args:
-        file_path: Path to the XML file
-
-    Returns:
-        Parsed ElementTree
-
-    Raises:
-        FileError: If the file cannot be read
-        XMLParseError: If the XML cannot be parsed even with error recovery
+    Parse XML file with error recovery. Tries multiple encodings if needed.
+    
+    Uses lxml's recover mode so it can handle slightly broken XML files.
     """
     if not file_path.exists():
         raise FileError(f"File not found: {file_path}")
@@ -92,7 +52,7 @@ def parse_xml_file(file_path: Path) -> LXMLElement:
     if not file_path.is_file():
         raise FileError(f"Path is not a file: {file_path}")
 
-    # Try to read the file with different encodings
+    # Try different encodings - some files are weird
     content = None
     encoding_used = None
 
@@ -111,9 +71,8 @@ def parse_xml_file(file_path: Path) -> LXMLElement:
     if content is None:
         raise FileError(f"Could not read file with any supported encoding: {file_path}")
 
-    # Parse XML with error recovery
     try:
-        # Use recover parser to handle malformed XML
+        # Use recover mode - handles broken XML gracefully
         parser = etree.XMLParser(recover=True, huge_tree=True)
         tree = etree.fromstring(content.encode(encoding_used), parser=parser)
         logger.debug(f"Successfully parsed XML file: {file_path}")
@@ -127,34 +86,19 @@ def parse_xml_file(file_path: Path) -> LXMLElement:
 def find_elements_with_namespace_handling(
     root: LXMLElement, tag_name: str, namespace_map: Optional[Dict[str, str]] = None
 ) -> List[LXMLElement]:
-    """
-    Find elements by tag name, handling namespace variations.
-
-    Args:
-        root: Root element to search from
-        tag_name: Tag name to find (local name, namespace-agnostic)
-        namespace_map: Optional namespace map for explicit namespace handling
-
-    Returns:
-        List of matching elements
-    """
+    """Find elements by tag name - works with or without namespaces."""
     if namespace_map:
-        # Use explicit namespace
         try:
             return root.findall(f".//{{{namespace_map.get('ns', '')}}}{tag_name}", namespaces=namespace_map)
         except Exception:
             pass
 
-    # Try to find by local name (handles namespaced and non-namespaced)
     results = []
-
-    # First, try without namespace (direct tag match)
+    # Try direct match first
     results.extend(root.findall(f".//{tag_name}"))
 
-    # Also try to match local name regardless of namespace
+    # Also match by local name for namespaced elements (ns:tag -> tag)
     for elem in root.iter():
-        # Extract local name (after last '}' or full tag if no namespace)
-        # Convert tag to string to handle QName objects and cython types
         tag_str = str(elem.tag) if hasattr(elem, 'tag') else elem.tag
         local_name = tag_str.split("}")[-1] if "}" in tag_str else tag_str
         if local_name == tag_name and elem not in results:
@@ -164,22 +108,8 @@ def find_elements_with_namespace_handling(
 
 
 def extract_text_content(element: LXMLElement) -> str:
-    """
-    Extract and normalize text content from an element.
-
-    Args:
-        element: The XML element
-
-    Returns:
-        Normalized text content (stripped of whitespace)
-    """
+    """Extract text content from element, stripped of whitespace."""
     if element is None:
         return ""
-
-    # Get direct text and tail text
-    text = (element.text or "").strip()
-    tail = (element.tail or "").strip()
-
-    # Also collect text from direct text nodes only (not nested)
-    return text
+    return (element.text or "").strip()
 
